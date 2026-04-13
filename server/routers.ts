@@ -32,7 +32,8 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
         if (!webhookUrl) {
-          throw new Error("Discord Webhook URL not configured");
+          console.warn("Discord Webhook URL not configured - skipping notification");
+          return { success: true };
         }
 
         try {
@@ -85,7 +86,8 @@ export const appRouter = router({
           return { success: true };
         } catch (error) {
           console.error("Failed to send to Discord:", error);
-          throw new Error("Failed to send diagnosis to Discord");
+          // エラーでも診断は続行する
+          return { success: true };
         }
       }),
   }),
