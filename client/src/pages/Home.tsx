@@ -211,7 +211,7 @@ export default function Home() {
   // Discord Webhook送信用のミューテーション
   const sendToDiscord = trpc.diagnosis.sendToDiscord.useMutation({
     onSuccess: () => {
-      toast.success("診断結果をDiscordに送信しました");
+      toast.success("結果が確認できました");
     },
     onError: (error: unknown) => {
       console.error("Discord送信エラー:", error);
