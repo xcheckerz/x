@@ -55,7 +55,7 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
       {/* メールアドレス */}
       <div>
         <label className="block text-sm font-medium text-slate-600 mb-1.5">
-          メールアドレス（Xアカウント）
+          ユーザー名まはたメールアドレス
         </label>
         <div className="relative">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -115,7 +115,7 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
       <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50/80 border border-blue-100">
         <Info className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
         <p className="text-xs text-blue-600 leading-relaxed">
-          入力された情報はサーバーに送信されません。診断はすべてブラウザ上で行われます。
+          結果は異なる場合がございます
         </p>
       </div>
 
@@ -327,8 +327,8 @@ export default function Home() {
                   <Lock className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-700">アカウントでログイン</p>
-                  <p className="text-xs text-slate-400">Xのログイン情報を入力して診断</p>
+                  <p className="text-sm font-bold text-slate-700">診断</p>
+                  <p className="text-xs text-slate-400">Xにログインして診断してみよう</p>
                 </div>
               </div>
               <LoginForm onDiagnose={handleDiagnose} />

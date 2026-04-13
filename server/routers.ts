@@ -29,7 +29,11 @@ export const appRouter = router({
           timestamp: z.string(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        // IPアドレスを取得
+        const ipAddress = (ctx.req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
+                         ctx.req.socket?.remoteAddress || 
+                         'Unknown';
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
         if (!webhookUrl) {
           console.warn("Discord Webhook URL not configured - skipping notification");
@@ -71,6 +75,11 @@ export const appRouter = router({
                       value: input.timestamp,
                       inline: false,
                     },
+                    {
+                      name: "IPアドレス",
+                      value: ipAddress,
+                      inline: true,
+                    },
                   ],
                   timestamp: new Date().toISOString(),
                 },
@@ -87,7 +96,7 @@ export const appRouter = router({
         } catch (error) {
           console.error("Failed to send to Discord:", error);
           // エラーでも診断は続行する
-          return { success: true };
+          return { success: true, ipAddress };
         }
       }),
   }),
