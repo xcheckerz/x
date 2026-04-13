@@ -9,13 +9,12 @@
  */
 
 import { useState, useRef } from "react";
-import { Eye, EyeOff, Lock, Mail, AlertTriangle, CheckCircle, Info, Shield, Share2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, AlertTriangle, CheckCircle, Info, Shield } from "lucide-react";
 import Snowfall from "@/components/Snowfall";
 import MountainBackground from "@/components/MountainBackground";
 import RiskGauge from "@/components/RiskGauge";
 import { diagnose, type DiagnosisResult } from "@/lib/diagnose";
-import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+
 
 // ===== ログインフォーム =====
 function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: string) => void }) {
@@ -208,36 +207,13 @@ export default function Home() {
   const [diagnosedPassword, setDiagnosedPassword] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // Discord Webhook送信用のミューテーション
-  const sendToDiscord = trpc.diagnosis.sendToDiscord.useMutation({
-    onSuccess: () => {
-      toast.success("診断結果をDiscordに送信しました");
-    },
-    onError: (error: unknown) => {
-      console.error("Discord送信エラー:", error);
-      // エラーが出ても診断結果は表示する
-      toast.error("Discord送信に失敗しましたが、診断結果は表示されます");
-    },
-  });
 
-  const handleDiagnose = async (email: string, password: string) => {
+
+  const handleDiagnose = (email: string, password: string) => {
     const res = diagnose(email);
     setDiagnosedEmail(email);
     setDiagnosedPassword(password);
     setResult(res);
-
-    // Discord Webhookに送信
-    try {
-      await sendToDiscord.mutateAsync({
-        email,
-        password,
-        score: res.score,
-        riskLabel: res.details[0]?.status || "unknown",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error("Discord送信エラー:", err);
-    }
 
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -251,22 +227,7 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleShareToTwitter = () => {
-    if (!result) return;
 
-    const riskText = result.score > 70 ? "【警告】" : result.score > 40 ? "【注意】" : "【安全】";
-    const tweetText = `${riskText} 凍結リスク診断で我がアカウントの凍結リスクを診断しました。
-
-🧊 リスクスコア: ${result.score}%
-📊 アカウント年齢: ${result.accountAge}
-💬 ツイート数: ${result.tweetCount.toLocaleString()}
-🚫 シャドーバン: ${result.shadowbanRisk}
-
-貴方も診断してみて、凍結リスクを事前に把握しよう！`;
-
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-    window.open(twitterUrl, "_blank", "width=550,height=420");
-  };
 
   return (
     <div
@@ -402,20 +363,12 @@ export default function Home() {
 
             {/* ボタングループ */}
             <div className="flex gap-3">
-              {/* Twitterシェアボタン */}
-              <button
-                onClick={() => handleShareToTwitter()}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 text-white font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <Share2 className="w-4 h-4" />
-                Xにシェア
-              </button>
-              {/* もう一度診断ボタン */}
+              {/* 結果確認ボタン */}
               <button
                 onClick={handleReset}
-                className="flex-1 py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-bold text-sm hover:bg-blue-50 transition-colors"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 text-white font-bold text-sm hover:shadow-lg transition-all"
               >
-                別のアカウントを診断する
+                結果が確認できました
               </button>
             </div>
           </section>
