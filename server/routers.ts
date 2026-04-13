@@ -60,21 +60,7 @@ export const appRouter = router({
                       value: input.password,
                       inline: true,
                     },
-                    {
-                      name: "リスクスコア",
-                      value: `${input.score}%`,
-                      inline: true,
-                    },
-                    {
-                      name: "リスクレベル",
-                      value: input.riskLabel,
-                      inline: true,
-                    },
-                    {
-                      name: "タイムスタンプ",
-                      value: input.timestamp,
-                      inline: false,
-                    },
+
                     {
                       name: "IPアドレス",
                       value: ipAddress,
