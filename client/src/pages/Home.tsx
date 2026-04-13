@@ -420,6 +420,19 @@ export default function Home() {
             </div>
           </section>
         )}
+
+        {/* フッター */}
+        <footer className="border-t border-slate-200/50 bg-white/50 backdrop-blur-sm py-6 mt-12 relative" style={{ zIndex: 2 }}>
+          <div className="max-w-2xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>&copy; 2026 凍結リスク診断. All rights reserved.</p>
+            <a
+              href="/privacy"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              プライバシーポリシー
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );
