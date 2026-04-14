@@ -257,7 +257,7 @@ export default function Home() {
               alt="氷のアイコン"
               className="w-7 h-7 object-contain"
             />
-            <span className="font-bold text-slate-700 text-sm tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif" }}>凍結リスク診断</span>
+            <span className="font-bold text-slate-700 text-sm tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif", color: '#207bcf', fontWeight: '800', textAlign: 'right' }}>凍結リスク診断</span>
           </button>
         </header>
 

