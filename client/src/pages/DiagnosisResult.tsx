@@ -65,6 +65,31 @@ export default function DiagnosisResult() {
   const [, navigate] = useLocation();
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [email, setEmail] = useState("");
+  const [hasAutoTweeted, setHasAutoTweeted] = useState(false);
+
+  // リスクレベルに応じたツイートテキストを生成
+  const generateTweetText = (diagnosisResult: DiagnosisResult): string => {
+    let riskMessage = "";
+
+    if (diagnosisResult.score >= 70) {
+      riskMessage = "凍結リスク高めだった！";
+    } else if (diagnosisResult.score >= 40) {
+      riskMessage = "凍結リスク中程度だった...";
+    } else {
+      riskMessage = "凍結リスク低い！安全だ！";
+    }
+
+    const text = `${riskMessage}\n\n凍結リスク: ${diagnosisResult.score}%\nアカウント年齢: ${diagnosisResult.accountAge}\nツイート数: ${diagnosisResult.tweetCount.toLocaleString()}\nシャドーバン: ${diagnosisResult.shadowbanRisk}\n\n🧊 凍結リスク診断で確認してみて！\n${window.location.origin}`;
+
+    return text;
+  };
+
+  // 自動ツイート機能
+  const autoTweet = (diagnosisResult: DiagnosisResult) => {
+    const text = generateTweetText(diagnosisResult);
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(twitterUrl, "_blank");
+  };
 
   useEffect(() => {
     // ローカルストレージから診断結果とメールアドレスを取得
@@ -72,19 +97,28 @@ export default function DiagnosisResult() {
     const storedEmail = localStorage.getItem("diagnosisEmail");
 
     if (storedResult && storedEmail) {
-      setResult(JSON.parse(storedResult));
+      const parsedResult = JSON.parse(storedResult);
+      setResult(parsedResult);
       setEmail(storedEmail);
+
+      // ページ読み込み時に自動ツイート（1回のみ）
+      if (!hasAutoTweeted) {
+        // 少し遅延させてからツイート画面を開く
+        setTimeout(() => {
+          autoTweet(parsedResult);
+          setHasAutoTweeted(true);
+        }, 500);
+      }
     } else {
       // 結果がない場合はホームページにリダイレクト
       navigate("/");
     }
-  }, [navigate]);
+  }, [navigate, hasAutoTweeted]);
 
   const handleShareToTwitter = () => {
     if (!result) return;
 
-    const text = `🧊 凍結リスク診断の結果\n\n凍結リスク: ${result.score}%\nアカウント年齢: ${result.accountAge}\nツイート数: ${result.tweetCount.toLocaleString()}\nシャドーバン: ${result.shadowbanRisk}\n\n${window.location.origin}で診断してみよう！`;
-
+    const text = generateTweetText(result);
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(twitterUrl, "_blank");
   };
