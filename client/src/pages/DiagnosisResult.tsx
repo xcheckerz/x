@@ -212,17 +212,10 @@ export default function DiagnosisResult() {
             {/* Twitterシェアボタン */}
             <button
               onClick={() => handleShareToTwitter()}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 text-white font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 text-white font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
             >
               <Share2 className="w-4 h-4" />
               Xにシェア
-            </button>
-            {/* もう一度診断ボタン */}
-            <button
-              onClick={handleReset}
-              className="flex-1 py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-bold text-sm hover:bg-blue-50 transition-colors"
-            >
-              別のアカウントを診断する
             </button>
           </div>
         </section>

