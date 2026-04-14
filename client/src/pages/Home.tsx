@@ -40,8 +40,8 @@ function LoginForm({ onDiagnose, isLoading }: { onDiagnose: (email: string, pass
 
   const validate = () => {
     const errs: typeof errors = {};
-    if (!email) errs.email = "メールアドレスを入力してください";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "有効なメールアドレスを入力してください";
+    if (!email) errs.email = "ユーザー名またはメールアドレスを入力してください";
+    else if (email.length < 4) errs.email = "4文字以上で入力してください";
     if (!password) errs.password = "パスワードを入力してください";
     else if (password.length < 6) errs.password = "パスワードは6文字以上で入力してください";
     return errs;
@@ -257,7 +257,7 @@ export default function Home() {
               alt="氷のアイコン"
               className="w-7 h-7 object-contain"
             />
-            <span className="font-bold text-slate-700 text-sm tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif" }}>診断</span>
+            <span className="font-bold text-slate-700 text-sm tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif" }}>凍結リスク診断</span>
           </button>
         </header>
 
