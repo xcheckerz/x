@@ -44,6 +44,8 @@
   /* Custom font families */
   --font-sans: 'Noto Sans JP', sans-serif;
   --font-serif: 'Noto Serif JP', serif;
+  --font-display: 'Playfair Display', serif;
+  --font-montserrat: 'Montserrat', sans-serif;
 }
 
 :root {

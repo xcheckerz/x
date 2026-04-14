@@ -3,19 +3,26 @@
  * プライバシーポリシーページ
  */
 
+import { useLocation } from "wouter";
+
 export default function PrivacyPolicy() {
+  const [, navigate] = useLocation();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* ヘッダー */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+        >
           <img
             src="https://d2xsxph8kpxj0f.cloudfront.net/310519663552057848/CuC3B5sAkxkvMwjRYbotyX/freeze-ice-cube-FSBkjAE4nL7jTLD5mAinc6.webp"
             alt="氷のアイコン"
             className="w-7 h-7 object-contain"
           />
-          <span className="font-bold text-slate-700 text-sm tracking-wide">凍結リスク診断</span>
-        </div>
+          <span className="font-bold text-slate-700 text-sm tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif" }}>凍結リスク診断</span>
+        </button>
         <a
           href="/"
           className="text-sm text-blue-600 hover:text-blue-700 font-medium"
